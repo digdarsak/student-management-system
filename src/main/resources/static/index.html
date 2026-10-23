@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Admin Console</title>
+<style>
+  :root { --bg:#eef1f5; --card:#fff; --ink:#1b2a41; --muted:#5d6b7e; --line:#d5dce5; --accent:#0f6e6e; --accent-dark:#0a5252; --danger:#b3412f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  button,input,select { font:inherit; }
+  button:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid #7fc4c4; outline-offset:1px; }
+  .hidden { display:none !important; }
+  h2 { margin:0 0 12px; font-size:1rem; } h2 small { font-weight:400; color:var(--muted); margin-left:6px; }
+
+  #login { min-height:100vh; display:grid; place-items:center; padding:20px; background:linear-gradient(160deg,#1b2a41 0%,#0f6e6e 100%); }
+  .login-box { background:var(--card); padding:32px; border-radius:12px; width:100%; max-width:360px; }
+  .login-box h1 { margin:0 0 4px; font-size:1.5rem; } .login-box p { margin:0 0 18px; color:var(--muted); }
+  label { display:block; font-size:.9rem; font-weight:600; margin:12px 0 4px; }
+  input,select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  .btn { padding:9px 16px; border:0; border-radius:6px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .btn:hover { background:var(--accent-dark); }
+  .btn.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); } .btn.ghost:hover { background:var(--bg); }
+  .btn.danger { background:var(--danger); } .btn.small { padding:5px 10px; font-size:.85rem; }
+  .btn:disabled { opacity:.4; cursor:default; }
+  .error { color:var(--danger); font-size:.9rem; min-height:1.3em; margin:8px 0 0; }
+  .hint { font-size:.85rem; color:var(--muted); margin-top:14px; }
+
+  header { background:var(--ink); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  header h1 { margin:0; font-size:1.15rem; } header span { color:#9fb0c6; font-size:.85rem; display:block; }
+  main { max-width:1150px; margin:0 auto; padding:20px; }
+
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; text-align:left; border-top:4px solid var(--accent); }
+  .kpi b { display:block; font-size:2rem; line-height:1.2; } .kpi span { color:var(--muted); font-size:.9rem; }
+  .kpi.alert { border-top-color:var(--danger); cursor:pointer; font:inherit; color:inherit; } .kpi.alert b { color:var(--danger); }
+  .kpi.alert.on { background:#fbefec; }
+
+  .panels { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin-bottom:16px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+  .bar-row { display:grid; grid-template-columns:60px 1fr 52px; gap:10px; align-items:center; width:100%; padding:5px 6px; margin:2px 0; background:none; border:0; border-radius:6px; cursor:pointer; text-align:left; color:inherit; }
+  .bar-row:hover,.bar-row.on { background:#e3f0f0; } .bar-row span:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+  .bar { height:12px; background:var(--bg); border-radius:6px; overflow:hidden; } .bar i { display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .6s ease; }
+  .cols { display:flex; gap:8px; height:190px; }
+  .col { flex:1; display:flex; flex-direction:column; align-items:center; font-size:.8rem; } .col em { font-style:normal; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .track { flex:1; width:100%; display:flex; align-items:flex-end; } .track i { display:block; width:100%; background:var(--accent); border-radius:5px 5px 0 0; min-height:2px; transition:height .6s ease; }
+  .col:nth-child(1) .track i { background:var(--danger); } .col:nth-child(2) .track i { background:#d98c3f; }
+  ol { list-style:none; margin:0; padding:0; } ol button { display:flex; width:100%; align-items:center; gap:10px; padding:6px; background:none; border:0; border-radius:6px; cursor:pointer; text-align:left; color:inherit; } ol button:hover { background:#e3f0f0; }
+  ol small { display:block; color:var(--muted); } ol strong { margin-left:auto; } ol .rank { width:18px; color:var(--muted); font-weight:700; }
+
+  .avatar { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:.8rem; flex:none; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; align-items:center; }
+  .toolbar input { flex:3 1 220px; } .toolbar select { flex:1 1 140px; }
+  .chip { background:#fff; border:1px solid var(--line); border-radius:20px; padding:7px 14px; cursor:pointer; color:var(--ink); }
+  .chip.on { background:var(--danger); border-color:var(--danger); color:#fff; }
+
+  .table-wrap { background:var(--card); border:1px solid var(--line); border-radius:10px; overflow-x:auto; transition:opacity .15s; } .table-wrap.loading { opacity:.55; }
+  table { width:100%; border-collapse:collapse; min-width:780px; }
+  th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); font-size:.92rem; } th { background:#f6f8fa; font-weight:600; }
+  td.reg { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:600; }
+  .who { display:flex; align-items:center; gap:10px; } .who small { display:block; color:var(--muted); }
+  .badge { padding:2px 9px; border-radius:12px; font-weight:700; font-size:.85rem; }
+  .b-dist { background:#dff3e4; color:#1d5c2e; } .b-good { background:#dcecf2; color:#1b4d63; } .b-ok { background:#fbf0d4; color:#6b4a05; } .b-low { background:#f8dcd6; color:#8a2a1c; }
+  .att { display:flex; align-items:center; gap:8px; } .att .bar { width:60px; height:8px; } .att .bar i { background:var(--accent); } .att.low .bar i { background:var(--danger); } .att.low { color:var(--danger); font-weight:600; }
+  td.actions { white-space:nowrap; } td.actions button { margin-right:4px; }
+  .empty { padding:30px; text-align:center; color:var(--muted); }
+  .pager { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px; border-top:1px solid var(--line); font-size:.9rem; }
+  .pager div { display:flex; gap:6px; align-items:center; } .pager input { width:64px; text-align:center; padding:5px; }
+
+  dialog { border:0; border-radius:12px; padding:24px; width:min(460px,92vw); } dialog::backdrop { background:rgba(27,42,65,.55); } dialog h2 { font-size:1.2rem; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; } .help { font-size:.8rem; color:var(--muted); margin:3px 0 0; }
+  @media (prefers-reduced-motion:reduce) { .bar i,.track i { transition:none; } }
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form class="login-box" id="loginForm">
+    <h1>Campus Admin Console</h1>
+    <p>Registrar's office. Sign in to manage student records.</p>
+    <label for="user">Username</label><input id="user" autocomplete="username" required>
+    <label for="pass">Password</label><input id="pass" type="password" autocomplete="current-password" required>
+    <p class="error" id="loginError"></p>
+    <button class="btn" style="width:100%">Sign in</button>
+    <p class="hint">Demo login: admin / admin123</p>
+  </form>
+</section>
+
+<div id="app" class="hidden">
+  <header>
+    <div><h1>Campus Admin Console</h1><span>Student records and registration</span></div>
+    <button class="btn ghost small" id="logoutBtn" style="color:#fff;border-color:#5d6b7e">Log out</button>
+  </header>
+
+  <main>
+    <section class="kpis">
+      <div class="kpi"><b id="kTotal">0</b><span>Registered students</span></div>
+      <div class="kpi"><b id="kCgpa">0</b><span>Average CGPA</span></div>
+      <div class="kpi"><b id="kAtt">0</b><span>Average attendance</span></div>
+      <button class="kpi alert" id="kRiskCard" title="Show only students below 75% attendance"><b id="kRisk">0</b><span id="kRiskText">Attendance alerts (below 75%)</span></button>
+    </section>
+
+    <section class="panels">
+      <div class="panel"><h2>Students by programme <small>click to filter</small></h2><div id="courseBars"></div></div>
+      <div class="panel"><h2>CGPA distribution</h2><div class="cols" id="cgpaChart"></div></div>
+      <div class="panel"><h2>Top performers <small>click to open</small></h2><ol id="toppers"></ol></div>
+    </section>
+
+    <div class="toolbar" id="toolbar">
+      <input id="search" placeholder="Search name, registration no. or email (try 2301)" aria-label="Search students">
+      <select id="courseFilter" aria-label="Filter by programme"></select>
+      <select id="sortBy" aria-label="Sort students">
+        <option value="regNo:asc">Sort: Registration no.</option>
+        <option value="name:asc">Sort: Name A-Z</option>
+        <option value="cgpa:desc">Sort: CGPA, high to low</option>
+        <option value="attendance:asc">Sort: Attendance, low to high</option>
+      </select>
+      <button class="chip" id="riskChip">Attendance alerts only</button>
+      <button class="btn" id="addBtn">Add student</button>
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead><tr><th>Reg. no.</th><th>Student</th><th>Programme</th><th>Sem</th><th>CGPA</th><th>Attendance</th><th></th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty hidden" id="empty">No students match. Clear the search or filters.</div>
+      <div class="pager">
+        <span id="pageInfo"></span>
+        <div>
+          <button class="btn ghost small" id="firstBtn">First</button>
+          <button class="btn ghost small" id="prevBtn">Previous</button>
+          <span>Page</span><input id="pageNum" type="number" min="1" aria-label="Page number"><span id="pageTotal"></span>
+          <button class="btn ghost small" id="nextBtn">Next</button>
+          <button class="btn ghost small" id="lastBtn">Last</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog id="formDialog">
+  <form id="studentForm" method="dialog">
+    <h2 id="formTitle">Add student</h2>
+    <label for="fReg">Registration number</label>
+    <input id="fReg" required inputmode="numeric" maxlength="8" pattern="\d{8}" placeholder="23010042">
+    <p class="help">8 digits: admission year (23) + programme code (01 = BCA) + serial (0042).</p>
+    <label for="fName">Full name</label><input id="fName" required>
+    <label for="fEmail">Email</label><input id="fEmail" type="email" required>
+    <div class="row">
+      <div><label for="fCourse">Programme</label><select id="fCourse"></select></div>
+      <div><label for="fSem">Semester</label><select id="fSem"></select></div>
+    </div>
+    <div class="row">
+      <div><label for="fCgpa">CGPA (0-10)</label><input id="fCgpa" type="number" step="0.01" min="0" max="10" required></div>
+      <div><label for="fAtt">Attendance % (0-100)</label><input id="fAtt" type="number" min="0" max="100" required></div>
+    </div>
+    <p class="error" id="formError"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn">Save student</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="deleteDialog">
+  <h2>Delete student?</h2><p id="deleteText"></p>
+  <div class="dialog-actions">
+    <button class="btn ghost" id="deleteCancel">Keep student</button>
+    <button class="btn danger" id="deleteConfirm">Delete student</button>
+  </div>
+</dialog>
+
+<script>
+/* ---------- STATE AND HELPERS ---------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n) => Number(n).toLocaleString("en-IN");
+const COURSES = ["BTech", "BCA", "MBA", "MCA", "BBA"];
+
+// Everything the table needs to ask the server for: which page, search text, filters, sort order
+const st = { page: 0, size: 15, q: "", course: "", low: false, sort: "regNo", dir: "asc", pages: 0, total: 0 };
+let rows = [], editingId = null, deletingId = null, requestNo = 0, searchTimer;
+
+async function api(url, method = "GET", body) {
+  const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401 && url !== "/api/login") showApp(false);
+  if (!res.ok) {
+    let msg = "Something went wrong. Try again.";
+    try { msg = (await res.json()).message || msg; } catch (e) { /* keep default */ }
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function initials(name) { return name.split(" ").map((w) => w[0]).slice(0, 2).join(""); }
+function avatar(name) {
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `<span class="avatar" style="background:hsl(${h} 45% 88%);color:hsl(${h} 45% 25%)">${esc(initials(name))}</span>`;
+}
+function cgpaBadge(v) {
+  const cls = v >= 9 ? "b-dist" : v >= 7.5 ? "b-good" : v >= 6 ? "b-ok" : "b-low";
+  return `<span class="badge ${cls}">${v.toFixed(2)}</span>`;
+}
+// Numbers count up from their old value, unless the visitor prefers reduced motion
+function countUp(el, to, decimals = 0, suffix = "") {
+  const show = (v) => (el.textContent = (decimals ? v.toFixed(decimals) : fmt(Math.round(v))) + suffix);
+  const from = Number(el.dataset.v || 0); el.dataset.v = to;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return show(to);
+  const t0 = performance.now();
+  (function tick(t) {
+    const p = Math.min((t - t0) / 700, 1);
+    show(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* ---------- LOGIN / LOGOUT ---------- */
+function showApp(loggedIn) {
+  $("login").classList.toggle("hidden", loggedIn);
+  $("app").classList.toggle("hidden", !loggedIn);
+  if (loggedIn) refresh().catch(() => {});
+}
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/login", "POST", { username: $("user").value.trim(), password: $("pass").value });
+    $("loginError").textContent = "";
+    showApp(true);
+  } catch (err) { $("loginError").textContent = err.message; }
+});
+$("logoutBtn").addEventListener("click", async () => {
+  await api("/api/logout", "POST").catch(() => {});
+  $("pass").value = ""; showApp(false);
+});
+
+/* ---------- DASHBOARD ---------- */
+async function loadStats() {
+  const s = await api("/api/stats");
+  countUp($("kTotal"), s.total);
+  countUp($("kCgpa"), s.avgCgpa, 2);
+  countUp($("kAtt"), s.avgAttendance, 1, "%");
+  countUp($("kRisk"), s.lowAttendance);
+  $("kRiskText").textContent = `Attendance alerts (${s.total ? Math.round((s.lowAttendance / s.total) * 100) : 0}% of students)`;
+
+  const entries = Object.entries(s.byCourse).sort((a, b) => b[1] - a[1]);
+  const maxC = Math.max(1, ...entries.map((e) => e[1]));
+  $("courseBars").innerHTML = entries.map(([c, n]) =>
+    `<button class="bar-row ${st.course === c ? "on" : ""}" data-course="${esc(c)}"><span>${esc(c)}</span><div class="bar"><i style="width:${(n / maxC) * 100}%"></i></div><span>${fmt(n)}</span></button>`).join("");
+
+  const labels = ["Below 5", "5-6", "6-7", "7-8", "8-9", "9-10"];
+  const maxB = Math.max(1, ...s.cgpaBuckets);
+  $("cgpaChart").innerHTML = s.cgpaBuckets.map((n, i) =>
+    `<div class="col"><em>${fmt(n)}</em><div class="track"><i style="height:${(n / maxB) * 100}%"></i></div><span>${labels[i]}</span></div>`).join("");
+
+  $("toppers").innerHTML = s.toppers.map((t, i) =>
+    `<li><button data-reg="${esc(t.regNo)}"><span class="rank">${i + 1}</span>${avatar(t.name)}<span>${esc(t.name)}<small>${esc(t.course)} / ${esc(t.regNo)}</small></span><strong>${t.cgpa.toFixed(2)}</strong></button></li>`).join("");
+}
+
+/* ---------- STUDENT TABLE (one page at a time, fetched from the server) ---------- */
+async function loadTable() {
+  const mine = ++requestNo;   // ignore slow answers that arrive after a newer request
+  $("tableWrap").classList.add("loading");
+  const params = new URLSearchParams({ page: st.page, size: st.size, q: st.q, course: st.course, lowAtt: st.low, sort: st.sort, dir: st.dir });
+  const data = await api("/api/students?" + params);
+  if (mine !== requestNo) return;
+  $("tableWrap").classList.remove("loading");
+  st.total = data.total; st.pages = data.totalPages; rows = data.content;
+  if (st.pages > 0 && st.page >= st.pages) { st.page = st.pages - 1; return loadTable(); }
+  renderTable();
+}
+function renderTable() {
+  $("empty").classList.toggle("hidden", rows.length > 0);
+  $("tbody").innerHTML = rows.map((s) => `
+    <tr>
+      <td class="reg">${esc(s.regNo)}</td>
+      <td><div class="who">${avatar(s.name)}<span>${esc(s.name)}<small>${esc(s.email)}</small></span></div></td>
+      <td>${esc(s.course)}</td><td>${s.sem}</td><td>${cgpaBadge(s.cgpa)}</td>
+      <td><div class="att ${s.attendance < 75 ? "low" : ""}"><div class="bar"><i style="width:${s.attendance}%"></i></div>${s.attendance}%</div></td>
+      <td class="actions"><button class="btn ghost small" data-edit="${s.id}">Edit</button><button class="btn ghost small" data-del="${s.id}">Delete</button></td>
+    </tr>`).join("");
+  const from = st.total ? st.page * st.size + 1 : 0, to = Math.min((st.page + 1) * st.size, st.total);
+  $("pageInfo").textContent = `Showing ${fmt(from)}-${fmt(to)} of ${fmt(st.total)} students`;
+  $("pageNum").value = st.page + 1; $("pageTotal").textContent = "of " + fmt(Math.max(st.pages, 1));
+  $("firstBtn").disabled = $("prevBtn").disabled = st.page === 0;
+  $("nextBtn").disabled = $("lastBtn").disabled = st.page >= st.pages - 1;
+}
+function refresh() { return Promise.all([loadStats(), loadTable()]); }
+function goTo(p) { st.page = Math.max(0, Math.min(p, st.pages - 1)); loadTable().catch(() => {}); }
+function applyFilters() { st.page = 0; $("courseFilter").value = st.course; $("riskChip").classList.toggle("on", st.low); $("kRiskCard").classList.toggle("on", st.low); loadTable().catch(() => {}); loadStats().catch(() => {}); }
+
+$("search").addEventListener("input", () => {   // wait until the admin stops typing before asking the server
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { st.q = $("search").value.trim(); st.page = 0; loadTable().catch(() => {}); }, 300);
+});
+$("courseFilter").addEventListener("change", () => { st.course = $("courseFilter").value; applyFilters(); });
+$("sortBy").addEventListener("change", () => { [st.sort, st.dir] = $("sortBy").value.split(":"); goTo(0); });
+const toggleRisk = () => { st.low = !st.low; applyFilters(); };
+$("riskChip").addEventListener("click", toggleRisk);
+$("kRiskCard").addEventListener("click", () => { toggleRisk(); $("toolbar").scrollIntoView({ behavior: "smooth" }); });
+$("courseBars").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-course]"); if (!b) return;
+  st.course = st.course === b.dataset.course ? "" : b.dataset.course; applyFilters();
+});
+$("toppers").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-reg]"); if (!b) return;
+  $("search").value = st.q = b.dataset.reg; goTo(0); $("toolbar").scrollIntoView({ behavior: "smooth" });
+});
+$("firstBtn").addEventListener("click", () => goTo(0));
+$("prevBtn").addEventListener("click", () => goTo(st.page - 1));
+$("nextBtn").addEventListener("click", () => goTo(st.page + 1));
+$("lastBtn").addEventListener("click", () => goTo(st.pages - 1));
+$("pageNum").addEventListener("change", () => goTo(Number($("pageNum").value) - 1));
+
+/* ---------- ADD / EDIT / DELETE ---------- */
+function openForm(s) {
+  editingId = s ? s.id : null;
+  $("formTitle").textContent = s ? "Edit student" : "Add student";
+  $("fReg").value = s ? s.regNo : ""; $("fName").value = s ? s.name : ""; $("fEmail").value = s ? s.email : "";
+  $("fCourse").value = s ? s.course : "BCA"; $("fSem").value = s ? s.sem : 1;
+  $("fCgpa").value = s ? s.cgpa : ""; $("fAtt").value = s ? s.attendance : "";
+  $("formError").textContent = ""; $("formDialog").showModal();
+}
+$("addBtn").addEventListener("click", () => openForm(null));
+$("cancelBtn").addEventListener("click", () => $("formDialog").close());
+$("studentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = { regNo: $("fReg").value.trim(), name: $("fName").value.trim(), email: $("fEmail").value.trim(), course: $("fCourse").value,
+                 sem: Number($("fSem").value), cgpa: Number($("fCgpa").value), attendance: Number($("fAtt").value) };
+  try {   // the server validates and guarantees the registration number is unique
+    if (editingId === null) await api("/api/students", "POST", data); else await api("/api/students/" + editingId, "PUT", data);
+    $("formDialog").close(); await refresh();
+  } catch (err) { $("formError").textContent = err.message; }
+});
+$("tbody").addEventListener("click", (e) => {
+  const editId = e.target.dataset.edit, delId = e.target.dataset.del;
+  if (editId) openForm(rows.find((s) => s.id === Number(editId)));
+  if (delId) {
+    deletingId = Number(delId);
+    const s = rows.find((x) => x.id === deletingId);
+    $("deleteText").textContent = `${s.name} (${s.regNo}) will be removed permanently.`;
+    $("deleteDialog").showModal();
+  }
+});
+$("deleteConfirm").addEventListener("click", async () => {
+  try { await api("/api/students/" + deletingId, "DELETE"); } catch (err) { alert(err.message); }
+  $("deleteDialog").close(); await refresh().catch(() => {});
+});
+$("deleteCancel").addEventListener("click", () => $("deleteDialog").close());
+
+/* ---------- INIT ---------- */
+$("courseFilter").innerHTML = `<option value="">All programmes</option>` + COURSES.map((c) => `<option>${c}</option>`).join("");
+$("fCourse").innerHTML = COURSES.map((c) => `<option>${c}</option>`).join("");
+$("fSem").innerHTML = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<option>${n}</option>`).join("");
+api("/api/me").then(() => showApp(true)).catch(() => showApp(false));
+</script>
+</body>
+</html>
