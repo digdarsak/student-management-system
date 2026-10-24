@@ -24,11 +24,14 @@ public class Application {
     CommandLineRunner seed(AdminRepository admins, StudentRepository students, PasswordEncoder encoder) {
         return args -> {
             if (admins.count() == 0) {
-                admins.save(new AdminUser("admin", encoder.encode("admin123")));
+                // Online, set ADMIN_PASSWORD on the host so the default password is never used
+                String password = System.getenv().getOrDefault("ADMIN_PASSWORD", "admin123");
+                admins.save(new AdminUser("admin", encoder.encode(password)));
             }
             if (students.count() == 0) {
-                System.out.println("Creating 10,500 sample students...");
-                students.saveAll(SampleData.generate(10_500));
+                int count = Integer.parseInt(System.getenv().getOrDefault("SEED_COUNT", "10500"));
+                System.out.println("Creating " + count + " sample students...");
+                students.saveAll(SampleData.generate(count));
                 System.out.println("Done. Open http://localhost:8080");
             }
         };
